@@ -1,0 +1,10 @@
+{
+  "name": "홀덤 30일",
+  "short_name": "홀덤 30일",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0e1612",
+  "theme_color": "#0e1612",
+  "icons": [{ "src": "icon.png", "sizes": "180x180", "type": "image/png" }]
+}
