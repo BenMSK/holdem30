@@ -41,6 +41,25 @@ details.panel summary{cursor:pointer;font-weight:700}details.panel summary::mark
 .status{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 12px;margin:8px 0;font-size:.95em}
 .status b{color:var(--gold)}
 .terms td:first-child{white-space:nowrap;font-weight:600}
+/* 강의 본문 가독성 */
+.body{font-size:1.04em;line-height:1.85}
+.body p{margin:.75em 0}.body li{margin:.4em 0}
+.body h3{margin-top:2em;padding-top:.7em;border-top:1px solid var(--line);font-size:1.12em}
+.body h3:first-of-type{border-top:0;margin-top:.4em}
+.body .panel{border-left:4px solid var(--gold);background:var(--panel2)}
+.body b{background:linear-gradient(transparent 62%,var(--hintbg) 62%)}
+.body tr:nth-child(even) td{background:rgba(128,128,128,.07)}.body td,.body th{padding:7px 9px}
+.toc ol{margin:.3em 0;columns:2;column-gap:24px}.toc li{margin:.15em 0}
+.lnk{color:var(--gold);cursor:pointer;text-decoration:underline}
+/* 본문 위젯 */
+.wg{background:var(--panel2);border:1px dashed var(--gold);border-radius:12px;padding:12px 14px;margin:14px 0}
+.wg::before{content:"직접 만져 보기";display:block;font-size:.8em;color:var(--gold);font-weight:700;margin-bottom:6px}
+.wg h4{margin:.4em 0}.wg table{width:auto}.wg .card{margin-bottom:3px}
+.table.mini{max-height:300px;margin:6px 0}
+.cardbtn{cursor:pointer;display:inline-block}.card.sel{outline:3px solid var(--goldbg);transform:translateY(-5px)}
+.bar2{display:flex;height:24px;border-radius:6px;overflow:hidden;font-size:.75em;color:#fff;text-align:center;line-height:24px;white-space:nowrap}
+.eqbar{height:24px;background:var(--red);border-radius:6px;overflow:hidden}.eqbar i{display:block;height:100%;background:var(--green)}
+.wg input[type=range]{width:220px;max-width:60%}
 input[type=number],input[type=text],select{font:inherit;background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:6px 8px;width:110px}
 .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .cd{font-weight:700;white-space:nowrap}.cd.s1,.cd.s2{color:var(--red)}.cd.s0,.cd.s3{color:var(--text)}
@@ -89,6 +108,7 @@ input[type=number],input[type=text],select{min-height:40px}
 .days{grid-template-columns:repeat(2,1fr)}
 .seat{width:100px;font-size:.75em}.card{width:26px;height:36px;font-size:12px}.card.big{width:34px;height:48px;font-size:16px}.table{aspect-ratio:4/3;border-width:6px}.seat .cards{height:40px}
 .controls{gap:6px}.log{height:150px}
+.body{font-size:1em;line-height:1.8}.toc ol{columns:1}.table.mini{max-height:260px}
 }
 </style>
 </head>
@@ -101,6 +121,7 @@ input[type=number],input[type=text],select{min-height:40px}
 <main id="view"></main>
 <script src="poker.js"></script>
 <script src="content.js"></script>
+<script src="widgets.js"></script>
 <script>
 // ---------- 상태 ----------
 const KEY = 'holdem30';
@@ -116,6 +137,8 @@ const isDark = () => document.documentElement.dataset.theme === 'dark' || (!docu
 const applyTheme = () => { $('meta[name=theme-color]').setAttribute('content', isDark() ? '#000000' : '#ffffff'); };
 $('#themeBtn').onclick = () => { S.theme = isDark() ? 'light' : 'dark'; document.documentElement.dataset.theme = S.theme; save(); applyTheme(); };
 applyTheme();
+const applyFont = () => { document.documentElement.style.fontSize = S.font ? S.font + 'px' : ''; };
+applyFont();
 const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
 // 텍스트 안의 A♠ 같은 카드 표기를 색칠. 본문 HTML에도 안전(태그 안에는 카드 표기가 없음)
 const cc = html => html.replace(/([2-9TJQKA])([♠♥♦♣])/g, (m, r, s) => `<span class="cd s${'♠♥♦♣'.indexOf(s)}">${r}${s}</span>`)
@@ -185,6 +208,7 @@ function dayView(n) {
 <h1>Day ${d.d}. ${esc(d.title)} <span class="muted" style="font-size:.6em;font-weight:400">${esc(d.en)}</span></h1>
 <div class="panel"><b>오늘의 목표</b> ${esc(d.goal)}</div>
 ${d.terms ? `<details class="panel" open><summary>오늘 나오는 용어 ${d.terms.length}개 (먼저 한 번 훑어보세요)</summary><table class="terms">${d.terms.map(([t, m]) => `<tr><td>${cc(esc(t))}</td><td>${cc(esc(m))}</td></tr>`).join('')}</table></details>` : ''}
+<details class="panel toc" open><summary>목차 <span class="muted small" style="font-weight:400">· 글자 크기 <button class="small" id="fMinus">가−</button> <button class="small" id="fPlus">가+</button></span></summary><ol id="toc"></ol></details>
 <div class="panel body">${cc(d.body)}</div>
 <div class="panel"><b>핵심 암기</b><ul>${d.memo.map(m => `<li>${cc(esc(m))}</li>`).join('')}</ul></div>
 <div class="panel quiz"><b>퀴즈</b> <span class="muted small">(${d.quiz.length}문항${best !== undefined ? ' · 최고 ' + best + '%' : ''})</span><div id="quiz"></div><div id="quizResult"></div></div>
@@ -197,9 +221,13 @@ ${d.terms ? `<details class="panel" open><summary>오늘 나오는 용어 ${d.te
 function mountDay(n) {
   const d = DAYS.find(x => x.d === n); if (!d) return;
   $('#doneBtn').onclick = () => { S.done[n] = !S.done[n]; save(); route(); };
-  const slot = $('#rfi-chart-slot');
-  if (slot) slot.innerHTML = rangeWidget('rfi');
-  if (slot) mountRange(slot, RFI);
+  mountWidgets($('.body'));
+  // 목차: 본문 h3에서 생성. 해시를 바꾸면 라우터가 다시 그리므로 스크롤로 이동
+  const hs = [...$('.body').querySelectorAll('h3')];
+  $('#toc').innerHTML = hs.map((h, i) => `<li><span class="lnk" data-i="${i}">${h.textContent}</span></li>`).join('');
+  $('#toc').querySelectorAll('.lnk').forEach(a => a.onclick = () => hs[+a.dataset.i].scrollIntoView({ behavior: 'smooth', block: 'start' }));
+  const font = dlt => { S.font = Math.max(13, Math.min(22, (S.font || 16) + dlt)); save(); applyFont(); };
+  $('#fMinus').onclick = () => font(-1); $('#fPlus').onclick = () => font(1);
   const answered = {};
   const qbox = $('#quiz');
   qbox.innerHTML = d.quiz.map((q, i) => `<div class="q"><div><b>Q${i + 1}.</b> ${cc(esc(q.q))}</div>${q.a.map((a, j) => `<button class="opt" data-q="${i}" data-a="${j}">${'①②③④'[j]} ${cc(esc(a))}</button>`).join('')}<div class="why" id="why${i}" hidden></div></div>`).join('');
@@ -227,14 +255,14 @@ function mountRange(root, ranges) {
   const posBox = root.querySelector('[id$="-pos"]'), grid = root.querySelector('.grid'), txt = root.querySelector('[id$="-txt"]');
   const keys = Object.keys(ranges);
   const show = k => {
-    const set = parseRange(ranges[k]);
+    const set = ranges[k] instanceof Set ? ranges[k] : parseRange(ranges[k]);
     let h = '';
     for (let i = 0; i < 13; i++) for (let j = 0; j < 13; j++) {
       const key = i === j ? GR[i] + GR[i] : i < j ? GR[i] + GR[j] + 's' : GR[j] + GR[i] + 'o';
       h += `<span class="${set.has(key) ? 'in' : ''} ${i === j ? 'pair' : ''}">${key}</span>`;
     }
     grid.innerHTML = h;
-    txt.textContent = `${k}: ${ranges[k]}  (${set.size}/169 핸드, 약 ${Math.round(combos(set) / 1326 * 100)}%)`;
+    txt.textContent = `${k}: ${ranges[k] instanceof Set ? [...set].join(', ') : ranges[k]}  (${set.size}/169 핸드, 약 ${Math.round(combos(set) / 1326 * 100)}%)`;
     posBox.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.textContent === k));
   };
   posBox.innerHTML = keys.map(k => `<button>${k}</button>`).join('');
