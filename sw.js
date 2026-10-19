@@ -1,5 +1,5 @@
 // 오프라인용 서비스 워커. 파일을 바꾸면 CACHE 이름의 숫자를 올려야 폰에 새 버전이 들어감.
-const CACHE = 'holdem30-v1';
+const CACHE = 'holdem30-v2';
 const FILES = ['./', './index.html', './poker.js', './content.js', './manifest.json', './icon.png'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
